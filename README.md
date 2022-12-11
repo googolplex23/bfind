@@ -1,2 +1,2 @@
 # bfind
-Machine Learning based program for finding spaceships in cellular automata
+Updated version of afind, orginally made by Eugene Langvagen and modernized by Leo Fisher.
