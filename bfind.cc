@@ -30,9 +30,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>          //TODO: Deprecated, replace with chrono
-#//include <chrono>
+//include <chrono>
 #include <exception>
 #include <stdexcept>
+#include <vector>
 
 #include <inttypes.h>
 
@@ -56,12 +57,12 @@ static char rule_string[32] = "b3/s23";
 static mask_t birth_mask = 8;
 static mask_t stay_mask = 12;
 
-static int width = 6;
-static int period = 3;
+static int width = 5;
+static int period = 4;
 static int offset = 1;		// the y offset
 static int slide = 0;		// the x offset
 
-enum { asym, odd_sym, even_sym } mode = even_sym;
+enum { asym, odd_sym, even_sym } mode = odd_sym;
 
 static int left_edge = 0;
 
@@ -1631,37 +1632,40 @@ bool finder::compare_last_phase (index_t p, index_t q)
 //---------------------------------------------------------------------------
 int finder::difference (index_t p)
 {
-	int depth = vertex_depth (p);
-	int margin = period + 2;
-	int num_rows = round_up (depth, period) / period + 2 * margin;
+    int depth = vertex_depth (p);
+    int margin = period + 2;
+    int num_rows = round_up (depth, period) / period + 2 * margin;
 
-	row_t A[num_rows], B[num_rows], C[num_rows]; //this is the problem code that causes segfaults
+    // row_t A[num_rows], B[num_rows], C[num_rows]; //this is the problem code that causes segfaults
+    std::vector<row_t> A(num_rows), B(num_rows), C(num_rows);
 
-	for (int k = 0; k < num_rows; k++)
-		A[k] = B[k] = C[k] = 0;
+    for (int k = 0; k < num_rows; k++)
+        A[k] = B[k] = C[k] = 0;
+        //A.push_back(0);
+        //B.push_back(0);
+        //C.push_back(0);
 
-	for (int m = margin; p; m++) {
-		A[m] = V[p].row;
-		for (int k = 0; k < period; k++)
-			p = V[p].parent;
-	}
+    for (int m = margin; p; m++) {
+        A[m] = V[p].row;
+        for (int k = 0; k < period; k++)
+            p = V[p].parent;
+    }
 
-	for (int k = 0; k < num_rows; k++)
-		B[k] = A[k] << slide;
+    for (int k = 0; k < num_rows; k++)
+        B[k] = A[k] << slide;
 
-	for (int t = 0; t < period; t++) {
-		for (int k = 1; k < num_rows - 1; k++)
-			C[k] = evolve (B[k - 1], B[k], B[k + 1]);
-		for (int k = 0; k < num_rows; k++)
-			B[k] = C[k];
-	}
+    for (int t = 0; t < period; t++) {
+        for (int k = 1; k < num_rows - 1; k++)
+            C[k] = evolve (B[k - 1], B[k], B[k + 1]);
+        for (int k = 0; k < num_rows; k++)
+            B[k] = C[k];
+    }
 
-	int num = 0;
-	for (int k = 0; k < num_rows; k++)
-		if ((k + offset >= 0) and (k + offset < num_rows))
-			num += count_bits (A[k] ^ B[k + offset]);
-
-	return num;
+    int num = 0;
+    for (int k = 0; k < num_rows; k++)
+        if ((k + offset >= 0) and (k + offset < num_rows))
+            num += count_bits (A[k] ^ B[k + offset]);
+    return num;
 }
 //---------------------------------------------------------------------------
 /*
